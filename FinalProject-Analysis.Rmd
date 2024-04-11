@@ -1,19 +1,51 @@
 ---
-title: "R Notebook"
+title: "Final Project Analysis"
+author: "Matt McCoy, HwiJoon Lee, Tanvi Magdum"
+date: "23 April 2024"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
-```{r}
-plot(cars)
+```{r InstallPackages, results='hide', echo=FALSE}
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(gginference)) install.packages("gginference")
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+```{r, results='hide', echo=FALSE}
+survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
+```
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+### Does AI effect how much time students spent on Object Oriented Design per week?
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+**Null Hypothesis:** AI does not effect how much time students spend on Object Oriented Design per week.
 
+**Alternate Hypothesis:** AI does effect how much time students spend on Object Oriented Design per week.
+
+**Statistical Test: T-Test**
+
+***Reasoning:*** Conducting a T-Test for this question will produce the best result as comparing the mean number of hours of people who utilize AI in OOD versus those who do not. Will answer whether or not AI had an effect on overall time spent per week doing assignments for the course.
+
+```{r}
+noAiOnHoursSpent <- survey %>% filter(grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
+AiOnHoursSpent <- survey %>% filter(!grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
+
+t.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+
+ggttest(t.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.))
+```
+
+***Analysis:***
+
+Since the p-value (0.5007) is greater than 0.05, we fail to reject the null hypothesis. This means that there isnt enough evidence to say that there is a significant effect on time spent per week in OOD if someone is utilizing AI verses someone who is not.
+
+Since the 95 percent confidence interval includes 0 it further supports this conclusion that there isnt a significant effect on time spent if using AI.
+
+In conclusion based on the data and the results of the t-test, we do not have sufficient evidence to conclude that there is a significant effect in time spent per week in Object Oriented Design if you are using AI.
+
+**Determining Outliers**
+
+```{r}
+boxplot(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+boxplot(AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+```
+
+As seen in the above plots there are no visible outliers. So we do not need to do anything further.
