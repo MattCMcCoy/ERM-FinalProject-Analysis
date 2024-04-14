@@ -10,8 +10,31 @@ if(!require(dplyr)) install.packages("dplyr")
 if(!require(gginference)) install.packages("gginference")
 ```
 
+### 
+
 ```{r, results='hide', echo=FALSE}
 survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
+```
+
+### Does the use of code generation affect the academic performance in OOD?
+
+**Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
+
+**Alternate Hypothesis:** The use of code generation affect the academic performance in OOD.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
+
+```{r}
+survey$CodeGeneration <- ifelse(survey$How.do.you.use.AI.to.assist.your.work.if.you.use.them. == "Code Generation", "Yes", "No")
+
+survey$What.was.or.is.your.grade.from.OOD. <- as.numeric(as.character(survey$What.was.or.is.your.grade.from.OOD.))
+
+grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.or.is.your.grade.from.OOD."]
+grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.or.is.your.grade.from.OOD."]
+
+shapiro.test(grades_codeGen)
+shapiro.test(grades_noCodeGen)
+
 ```
 
 ### Does AI effect how much time students spent on Object Oriented Design per week?
