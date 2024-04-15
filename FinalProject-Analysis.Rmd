@@ -8,6 +8,7 @@ output: html_notebook
 ```{r InstallPackages, results='hide', echo=FALSE}
 if(!require(dplyr)) install.packages("dplyr")
 if(!require(gginference)) install.packages("gginference")
+library("ggpubr")
 ```
 
 ### 
@@ -16,7 +17,7 @@ if(!require(gginference)) install.packages("gginference")
 survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
 ```
 
-### Does the use of code generation affect the academic performance in OOD?
+### Does the use of code generation impact the academic performance in OOD?
 
 **Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
 
@@ -32,8 +33,21 @@ survey$What.was.or.is.your.grade.from.OOD. <- as.numeric(as.character(survey$Wha
 grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.or.is.your.grade.from.OOD."]
 grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.or.is.your.grade.from.OOD."]
 
+my_data <- survey[c("CodeGeneration", "What.was.or.is.your.grade.from.OOD.")]
+names(my_data) <- c("group", "grades")
+
+ggboxplot(my_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Yes", "No"),
+          ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
+
 shapiro.test(grades_codeGen)
 shapiro.test(grades_noCodeGen)
+
+```
+
+```{r}
+t.test(grades_codeGen, grades_noCodeGen, var.equal = FALSE)
 
 ```
 
