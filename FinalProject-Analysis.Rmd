@@ -17,6 +17,103 @@ library("ggpubr")
 survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
 ```
 
+### Did the grade in OOD improve depending on the AI usage?
+
+**Null Hypothesis:** There is no difference in mean grades between students who used AI and those who did not.
+
+**Alternate Hypothesis:** There is a significant difference in mean grades between the students who used AI and those who did not.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
+
+```{r}
+# Create a categorical variable for AI usage
+survey$AI_Usage <- ifelse(survey$How.much.have.you.used.AI.in.OOD..if.at.all. > 0, "AI User", "Non-AI User")
+
+# 1. Normality Assumption
+
+# Shapiro-Wilk Test
+shapiro_ai <- shapiro.test(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"])
+shapiro_non_ai <- shapiro.test(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"])
+
+# Print Shapiro-Wilk test results
+print(shapiro_ai)
+print(shapiro_non_ai)
+
+# QQ plots for pss and loneliness scores
+qqnorm(survey$What.was.or.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"],
+       main = "AI User Grade Distribution")
+qqnorm(survey$What.was.or.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"],
+       main = "Non-AI User Grade Distribution")
+```
+
+```{r}
+# Calculate variances
+var_ai <- var(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"])
+var_non_ai <- var(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"])
+
+# Print the variances
+print(paste("Variance of grades for AI users:", var_ai))
+print(paste("Variance of grades for Non-AI users:", var_non_ai))
+
+# Calculate IQR for AI users
+Q1_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"], 0.25)
+Q3_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"], 0.75)
+IQR_ai <- Q3_ai - Q1_ai
+
+# Calculate IQR for non-AI users
+Q1_non_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"], 0.25)
+Q3_non_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"], 0.75)
+IQR_non_ai <- Q3_non_ai - Q1_non_ai
+
+
+# Define thresholds for outliers
+lower_threshold_ai <- Q1_ai - 1.5 * IQR_ai
+upper_threshold_ai <- Q3_ai + 1.5 * IQR_ai
+
+lower_threshold_non_ai <- Q1_non_ai - 1.5 * IQR_non_ai
+upper_threshold_non_ai <- Q3_non_ai + 1.5 * IQR_non_ai
+
+
+# Identify outliers
+outliers_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_ai)]
+
+outliers_non_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "non_ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_non_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_non_ai)]
+
+
+# Print outliers
+print("Outliers for AI users:")
+print(outliers_ai)
+
+print("Outliers for non-AI users:")
+print(outliers_non_ai)
+
+# Boxplot for identifying outliers
+boxplot(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey, 
+        xlab="AI Usage", ylab="Grades", main="Boxplot of Grades by AI Usage")
+```
+***Test choice:***
+
+We use Welch t-test here as the underlying data looks normally distributed, as the p-values for both AI Users and Non-AI Users for Shapiro-Wilk test is above the level of significance. But the variances are not homogeneous. Also we have different number of samples in both groups.
+
+```{r}
+# Perform t-test assuming equal variances
+t_test <- t.test(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey)
+
+# Print the results of the t-test
+print(t_test)
+```
+***Analysis:***
+
+Since the p-value (0.1067) is greater than 0.05, we fail to reject the null hypothesis. This means that there is not enough evidence to prove that there is a significant difference in mean grades between the students who used AI and those who did not in OOD.
+
+The 95% confidence interval for the difference in means ranges from -15.762454 to 1.762454. This interval contains zero, further supporting the conclusion that there may not be a significant difference in mean grades between the two groups.
+
+Therefore, based on the results of the Welch Two Sample t-test, we do not find sufficient evidence to suggest that the usage of AI significantly impacts the grades of students in the OOD course.
+
+
+
+
+
 ### Does the use of code generation impact the academic performance in OOD?
 
 **Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
