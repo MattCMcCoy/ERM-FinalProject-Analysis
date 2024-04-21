@@ -17,6 +17,47 @@ library("ggpubr")
 survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
 ```
 
+### Impact of Subscription-based model
+
+```{r}
+# categorize it into true of it has subscription as response
+survey$IsSubscriptionModel <- grepl("subscription", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+# checks if they used AI because I am comparing if Sub model vs free model
+survey$UsedAI <- !grepl("Did Not Use", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+
+subscription_model_grades <- survey[survey$IsSubscriptionModel == TRUE, "What.was.or.is.your.grade.from.OOD."]
+no_subscription_model_grades <- survey[survey$IsSubscriptionModel == FALSE & survey$UsedAI == TRUE, "What.was.or.is.your.grade.from.OOD."]
+
+
+
+shapiro.test(no_subscription_model_grades)
+
+```
+
+```{r}
+grades_data <- data.frame(
+  grades = c(subscription_model_grades, no_subscription_model_grades),
+  group = c(rep("Subscription", length(subscription_model_grades)), rep("Free Model", length(no_subscription_model_grades)))
+)
+
+# Generate the boxplot
+ggboxplot(grades_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Subscription", "Free Model"),
+          ylab = "Grades from OOD", xlab = "Type of AI Model Used") +
+  theme_minimal()
+```
+
+```{r}
+ggboxplot(my_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Yes", "No"),
+          ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
+
+t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALSE)
+
+```
+
 ### Does the use of code generation impact the academic performance in OOD?
 
 **Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
@@ -33,10 +74,10 @@ survey$What.was.or.is.your.grade.from.OOD. <- as.numeric(as.character(survey$Wha
 grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.or.is.your.grade.from.OOD."]
 grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.or.is.your.grade.from.OOD."]
 
-my_data <- survey[c("CodeGeneration", "What.was.or.is.your.grade.from.OOD.")]
-names(my_data) <- c("group", "grades")
+data <- survey[c("CodeGeneration", "What.was.or.is.your.grade.from.OOD.")]
+names(data) <- c("group", "grades")
 
-ggboxplot(my_data, x = "group", y = "grades",
+ggboxplot(data, x = "group", y = "grades",
           color = "group", palette = c("#00AFBB", "#E7B800"),
           order = c("Yes", "No"),
           ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
