@@ -91,6 +91,7 @@ print(outliers_non_ai)
 boxplot(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey, 
         xlab="AI Usage", ylab="Grades", main="Boxplot of Grades by AI Usage")
 ```
+
 ***Test choice:***
 
 We use Welch t-test here as the underlying data looks normally distributed, as the p-values for both AI Users and Non-AI Users for Shapiro-Wilk test is above the level of significance. But the variances are not homogeneous. Also we have different number of samples in both groups.
@@ -102,6 +103,7 @@ t_test <- t.test(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = 
 # Print the results of the t-test
 print(t_test)
 ```
+
 ***Analysis:***
 
 Since the p-value (0.1067) is greater than 0.05, we fail to reject the null hypothesis. This means that there is not enough evidence to prove that there is a significant difference in mean grades between the students who used AI and those who did not in OOD.
@@ -109,10 +111,6 @@ Since the p-value (0.1067) is greater than 0.05, we fail to reject the null hypo
 The 95% confidence interval for the difference in means ranges from -15.762454 to 1.762454. This interval contains zero, further supporting the conclusion that there may not be a significant difference in mean grades between the two groups.
 
 Therefore, based on the results of the Welch Two Sample t-test, we do not find sufficient evidence to suggest that the usage of AI significantly impacts the grades of students in the OOD course.
-
-
-
-
 
 ### Does the use of code generation impact the academic performance in OOD?
 
@@ -125,12 +123,12 @@ Therefore, based on the results of the Welch Two Sample t-test, we do not find s
 ```{r}
 survey$CodeGeneration <- ifelse(survey$How.do.you.use.AI.to.assist.your.work.if.you.use.them. == "Code Generation", "Yes", "No")
 
-survey$What.was.or.is.your.grade.from.OOD. <- as.numeric(as.character(survey$What.was.or.is.your.grade.from.OOD.))
+survey$What.was.is.your.grade.from.OOD. <- as.numeric(as.character(survey$What.was.is.your.grade.from.OOD.))
 
-grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.or.is.your.grade.from.OOD."]
-grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.or.is.your.grade.from.OOD."]
+grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.is.your.grade.from.OOD."]
+grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.is.your.grade.from.OOD."]
 
-my_data <- survey[c("CodeGeneration", "What.was.or.is.your.grade.from.OOD.")]
+my_data <- survey[c("CodeGeneration", "What.was.is.your.grade.from.OOD.")]
 names(my_data) <- c("group", "grades")
 
 ggboxplot(my_data, x = "group", y = "grades",
@@ -141,12 +139,67 @@ ggboxplot(my_data, x = "group", y = "grades",
 shapiro.test(grades_codeGen)
 shapiro.test(grades_noCodeGen)
 
+#removing outlier
+grades_codeGen_no_outlier <- grades_codeGen[grades_codeGen != 68]
+
+grades_noCodeGen_no_outlier <- grades_noCodeGen[grades_noCodeGen != 76]
+
 ```
 
 ```{r}
 t.test(grades_codeGen, grades_noCodeGen, var.equal = FALSE)
+t.test(grades_codeGen_no_outlier, grades_noCodeGen, var.equal = FALSE)
 
 ```
+
+### Impact of Subscription-based model
+
+```{r}
+# categorize it into true of it has subscription as response
+survey$IsSubscriptionModel <- grepl("subscription", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+# checks if they used AI because I am comparing if Sub model vs free model
+survey$UsedAI <- !grepl("Did Not Use", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+
+subscription_model_grades <- survey[survey$IsSubscriptionModel == TRUE, "What.was.is.your.grade.from.OOD."]
+no_subscription_model_grades <- survey[survey$IsSubscriptionModel == FALSE & survey$UsedAI == TRUE, "What.was.is.your.grade.from.OOD."]
+
+
+
+shapiro.test(no_subscription_model_grades)
+
+```
+
+```{r}
+grades_data <- data.frame(
+  grades = c(subscription_model_grades, no_subscription_model_grades),
+  group = c(rep("Subscription", length(subscription_model_grades)), rep("Free Model", length(no_subscription_model_grades)))
+)
+
+# Generate the boxplot
+ggboxplot(grades_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Subscription", "Free Model"),
+          ylab = "Grades from OOD", xlab = "Type of AI Model Used") +
+  theme_minimal()
+```
+
+```{r}
+ggboxplot(my_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Yes", "No"),
+          ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
+
+t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALSE)
+
+```
+
+### Does the use of code generation impact the academic performance in OOD?
+
+**Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
+
+**Alternate Hypothesis:** The use of code generation affect the academic performance in OOD.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
 
 ### Does AI effect how much time students spent on Object Oriented Design per week?
 
