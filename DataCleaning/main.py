@@ -6,7 +6,6 @@ data.fillna('no', inplace=True)
 
 noValues = ["no", "No", "N/A", "NA", "NaN", "n/a", "None", "none", "none used for course"]
 
-
 def clean_f(item):
     if item in noValues:
         return "Did not use"
@@ -48,7 +47,7 @@ data.loc[data["Was AI available when you took OOD?"] == "No", ("How do you use A
 data["If you are using or used AI, do you believe that it has benefited or is benefiting your academic performance? "] \
     = data[("If you are using or used AI, do you believe that it "
             "has benefited or is benefiting your academic performance? ")].apply(clean_no)
-data["What was or is your grade from OOD? (0-100)"] = (data["What was or is your grade from OOD? (0-100)"]
+data["What was/is your grade from OOD? (0-100)"] = (data["What was/is your grade from OOD? (0-100)"]
                                                        .apply(clean_grade))
 data["How many hours did you spend on OOD per week?"] = (data["How many hours did you spend on OOD per week?"]
                                                          .apply(clean_hrrange))
