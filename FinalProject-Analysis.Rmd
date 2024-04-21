@@ -15,6 +15,7 @@ library("ggpubr")
 
 ```{r, results='hide', echo=FALSE}
 survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
+survey
 ```
 
 ### Did the grade in OOD improve depending on the AI usage?
@@ -27,37 +28,37 @@ survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
 
 ```{r}
 # Create a categorical variable for AI usage
-survey$AI_Usage <- ifelse(survey$How.much.have.you.used.AI.in.OOD..if.at.all. > 0, "AI User", "Non-AI User")
+survey$AI_Usage <- ifelse(survey$How.much.have.you.used...are.you.using.AI.in.OOD.if.at.all.. > 0, "AI User", "Non-AI User")
 
 # 1. Normality Assumption
 
 # Shapiro-Wilk Test
-shapiro_ai <- shapiro.test(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"])
-shapiro_non_ai <- shapiro.test(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"])
+shapiro_ai <- shapiro.test(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"])
+shapiro_non_ai <- shapiro.test(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"])
 
 # Print Shapiro-Wilk test results
 print(shapiro_ai)
 print(shapiro_non_ai)
 
 # QQ plots for pss and loneliness scores
-qqnorm(survey$What.was.or.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"],
+qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"],
        main = "AI User Grade Distribution")
-qqnorm(survey$What.was.or.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"],
+qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"],
        main = "Non-AI User Grade Distribution")
 ```
 
 ```{r}
 # Calculate variances
-var_ai <- var(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"])
-var_non_ai <- var(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"])
+var_ai <- var(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"])
+var_non_ai <- var(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"])
 
 # Print the variances
 print(paste("Variance of grades for AI users:", var_ai))
 print(paste("Variance of grades for Non-AI users:", var_non_ai))
 
 # Calculate IQR for AI users
-Q1_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"], 0.25)
-Q3_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User"], 0.75)
+Q1_ai <- quantile(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"], 0.25)
+Q3_ai <- quantile(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"], 0.75)
 IQR_ai <- Q3_ai - Q1_ai
 
 # Calculate IQR for non-AI users
@@ -88,7 +89,7 @@ print("Outliers for non-AI users:")
 print(outliers_non_ai)
 
 # Boxplot for identifying outliers
-boxplot(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey, 
+boxplot(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey, 
         xlab="AI Usage", ylab="Grades", main="Boxplot of Grades by AI Usage")
 ```
 
@@ -98,7 +99,7 @@ We use Welch t-test here as the underlying data looks normally distributed, as t
 
 ```{r}
 # Perform t-test assuming equal variances
-t_test <- t.test(What.was.or.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey)
+t_test <- t.test(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey)
 
 # Print the results of the t-test
 print(t_test)
@@ -215,9 +216,12 @@ t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALS
 noAiOnHoursSpent <- survey %>% filter(grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
 AiOnHoursSpent <- survey %>% filter(!grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
 
-t.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+newDF = data.frame("hours" = noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "Did not use")
+combinedDF = rbind(newDF, data.frame("hours" = AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "used"))
 
-ggttest(t.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.))
+t.test(combinedDF$hours ~ combinedDF$ai)
+
+ggttest(t.test(combinedDF$hours ~ combinedDF$ai))
 ```
 
 ***Analysis:***
@@ -231,8 +235,8 @@ In conclusion based on the data and the results of the t-test, we do not have su
 **Determining Outliers**
 
 ```{r}
-boxplot(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
-boxplot(AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+
+boxplot(combinedDF$hours ~ combinedDF$ai, ylab = "Hours Spent on Course", xlab = "Did they use AI in the course?")
 ```
 
 As seen in the above plots there are no visible outliers. So we do not need to do anything further.
