@@ -34,6 +34,8 @@ def clean_hrrange(item):
         return 45
     if item in "15-20":
         return 18
+    if item in "12+":
+        return 12
     return item
 
 
