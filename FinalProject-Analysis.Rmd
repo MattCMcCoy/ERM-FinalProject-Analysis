@@ -138,6 +138,10 @@ ggboxplot(my_data, x = "group", y = "grades",
 
 shapiro.test(grades_codeGen)
 shapiro.test(grades_noCodeGen)
+print('Code generation group population')
+print(length(grades_codeGen))
+print('No Code generation group population')
+print(length(grades_noCodeGen))
 
 #removing outlier
 grades_codeGen_no_outlier <- grades_codeGen[grades_codeGen != 68]
@@ -148,7 +152,9 @@ grades_noCodeGen_no_outlier <- grades_noCodeGen[grades_noCodeGen != 76]
 
 ```{r}
 t.test(grades_codeGen, grades_noCodeGen, var.equal = FALSE)
-t.test(grades_codeGen_no_outlier, grades_noCodeGen, var.equal = FALSE)
+t.test(grades_codeGen_no_outlier, grades_noCodeGen_no_outlier, var.equal = FALSE)
+
+ggttest(t.test(grades_codeGen, grades_noCodeGen, var.equal = FALSE))
 
 ```
 
@@ -163,10 +169,14 @@ survey$UsedAI <- !grepl("Did Not Use", survey$What.kind.of.AI.Model.did.you.use,
 subscription_model_grades <- survey[survey$IsSubscriptionModel == TRUE, "What.was.is.your.grade.from.OOD."]
 no_subscription_model_grades <- survey[survey$IsSubscriptionModel == FALSE & survey$UsedAI == TRUE, "What.was.is.your.grade.from.OOD."]
 
-
-
+#alternative = 'greater'
 shapiro.test(no_subscription_model_grades)
+shapiro.test(subscription_model_grades)
 
+print('Free model group population')
+print(length(no_subscription_model_grades))
+print('Subscription model group population')
+print(length(subscription_model_grades))
 ```
 
 ```{r}
@@ -189,7 +199,11 @@ ggboxplot(my_data, x = "group", y = "grades",
           order = c("Yes", "No"),
           ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
 
-t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALSE)
+wilcox.test(
+  subscription_model_grades, 
+  no_subscription_model_grades, 
+  alternative = "greater"
+)
 
 ```
 
