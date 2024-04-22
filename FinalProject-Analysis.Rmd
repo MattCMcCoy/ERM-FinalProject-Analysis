@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "Final Project Analysis"
 author: "Matt McCoy, HwiJoon Lee, Tanvi Magdum"
@@ -250,3 +251,250 @@ boxplot(AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
 ```
 
 As seen in the above plots there are no visible outliers. So we do not need to do anything further.
+=======
+---
+title: "Final Project Analysis"
+author: "Matt McCoy, HwiJoon Lee, Tanvi Magdum"
+date: "23 April 2024"
+output: html_notebook
+---
+
+```{r InstallPackages, results='hide', echo=FALSE}
+if(!require(dplyr)) install.packages("dplyr")
+if(!require(gginference)) install.packages("gginference")
+library("ggpubr")
+```
+
+### 
+
+```{r, results='hide', echo=FALSE}
+survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
+survey
+```
+
+### Did the grade in OOD improve depending on the AI usage?
+
+**Null Hypothesis:** There is no difference in mean grades between students who used AI and those who did not.
+
+**Alternate Hypothesis:** There is a significant difference in mean grades between the students who used AI and those who did not.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
+
+```{r}
+# Create a categorical variable for AI usage
+survey$AI_Usage <- ifelse(survey$How.much.have.you.used...are.you.using.AI.in.OOD.if.at.all.. > 0, "AI User", "Non-AI User")
+
+# 1. Normality Assumption
+
+# Shapiro-Wilk Test
+shapiro_ai <- shapiro.test(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"])
+shapiro_non_ai <- shapiro.test(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"])
+
+# Print Shapiro-Wilk test results
+print(shapiro_ai)
+print(shapiro_non_ai)
+
+# QQ plots for pss and loneliness scores
+qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"],
+       main = "AI User Grade Distribution")
+qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"],
+       main = "Non-AI User Grade Distribution")
+```
+
+```{r}
+# Calculate variances
+var_ai <- var(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"])
+var_non_ai <- var(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"])
+
+# Print the variances
+print(paste("Variance of grades for AI users:", var_ai))
+print(paste("Variance of grades for Non-AI users:", var_non_ai))
+
+# Calculate IQR for AI users
+Q1_ai <- quantile(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"], 0.25)
+Q3_ai <- quantile(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI User"], 0.75)
+IQR_ai <- Q3_ai - Q1_ai
+
+# Calculate IQR for non-AI users
+Q1_non_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"], 0.25)
+Q3_non_ai <- quantile(survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User"], 0.75)
+IQR_non_ai <- Q3_non_ai - Q1_non_ai
+
+
+# Define thresholds for outliers
+lower_threshold_ai <- Q1_ai - 1.5 * IQR_ai
+upper_threshold_ai <- Q3_ai + 1.5 * IQR_ai
+
+lower_threshold_non_ai <- Q1_non_ai - 1.5 * IQR_non_ai
+upper_threshold_non_ai <- Q3_non_ai + 1.5 * IQR_non_ai
+
+
+# Identify outliers
+outliers_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_ai)]
+
+outliers_non_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "non_ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_non_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_non_ai)]
+
+
+# Print outliers
+print("Outliers for AI users:")
+print(outliers_ai)
+
+print("Outliers for non-AI users:")
+print(outliers_non_ai)
+
+# Boxplot for identifying outliers
+boxplot(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey, 
+        xlab="AI Usage", ylab="Grades", main="Boxplot of Grades by AI Usage")
+```
+
+***Test choice:***
+
+We use Welch t-test here as the underlying data looks normally distributed, as the p-values for both AI Users and Non-AI Users for Shapiro-Wilk test is above the level of significance. But the variances are not homogeneous. Also we have different number of samples in both groups.
+
+```{r}
+# Perform t-test assuming equal variances
+t_test <- t.test(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey)
+
+# Print the results of the t-test
+print(t_test)
+```
+
+***Analysis:***
+
+Since the p-value (0.1067) is greater than 0.05, we fail to reject the null hypothesis. This means that there is not enough evidence to prove that there is a significant difference in mean grades between the students who used AI and those who did not in OOD.
+
+The 95% confidence interval for the difference in means ranges from -15.762454 to 1.762454. This interval contains zero, further supporting the conclusion that there may not be a significant difference in mean grades between the two groups.
+
+Therefore, based on the results of the Welch Two Sample t-test, we do not find sufficient evidence to suggest that the usage of AI significantly impacts the grades of students in the OOD course.
+
+### Does the use of code generation impact the academic performance in OOD?
+
+**Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
+
+**Alternate Hypothesis:** The use of code generation affect the academic performance in OOD.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
+
+```{r}
+survey$CodeGeneration <- ifelse(survey$How.do.you.use.AI.to.assist.your.work.if.you.use.them. == "Code Generation", "Yes", "No")
+
+survey$What.was.is.your.grade.from.OOD. <- as.numeric(as.character(survey$What.was.is.your.grade.from.OOD.))
+
+grades_codeGen <- survey[survey$CodeGeneration == "Yes", "What.was.is.your.grade.from.OOD."]
+grades_noCodeGen <- survey[survey$CodeGeneration == "No", "What.was.is.your.grade.from.OOD."]
+
+my_data <- survey[c("CodeGeneration", "What.was.is.your.grade.from.OOD.")]
+names(my_data) <- c("group", "grades")
+
+ggboxplot(my_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Yes", "No"),
+          ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
+
+shapiro.test(grades_codeGen)
+shapiro.test(grades_noCodeGen)
+
+#removing outlier
+grades_codeGen_no_outlier <- grades_codeGen[grades_codeGen != 68]
+
+grades_noCodeGen_no_outlier <- grades_noCodeGen[grades_noCodeGen != 76]
+
+```
+
+```{r}
+t.test(grades_codeGen, grades_noCodeGen, var.equal = FALSE)
+t.test(grades_codeGen_no_outlier, grades_noCodeGen, var.equal = FALSE)
+
+```
+
+### Impact of Subscription-based model
+
+```{r}
+# categorize it into true of it has subscription as response
+survey$IsSubscriptionModel <- grepl("subscription", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+# checks if they used AI because I am comparing if Sub model vs free model
+survey$UsedAI <- !grepl("Did Not Use", survey$What.kind.of.AI.Model.did.you.use, ignore.case = TRUE)
+
+subscription_model_grades <- survey[survey$IsSubscriptionModel == TRUE, "What.was.is.your.grade.from.OOD."]
+no_subscription_model_grades <- survey[survey$IsSubscriptionModel == FALSE & survey$UsedAI == TRUE, "What.was.is.your.grade.from.OOD."]
+
+
+
+shapiro.test(no_subscription_model_grades)
+shapiro.test(subscription_model_grades)
+```
+
+```{r}
+grades_data <- data.frame(
+  grades = c(subscription_model_grades, no_subscription_model_grades),
+  group = c(rep("Subscription", length(subscription_model_grades)), rep("Free Model", length(no_subscription_model_grades)))
+)
+
+# Generate the boxplot
+ggboxplot(grades_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Subscription", "Free Model"),
+          ylab = "Grades from OOD", xlab = "Type of AI Model Used") +
+  theme_minimal()
+```
+
+```{r}
+ggboxplot(my_data, x = "group", y = "grades",
+          color = "group", palette = c("#00AFBB", "#E7B800"),
+          order = c("Yes", "No"),
+          ylab = "Grades from OOD", xlab = "Use of AI for Code Generation")
+
+wilcox_test_result <- wilcox.test(
+  subscription_model_grades, 
+  no_subscription_model_grades, 
+  alternative = "two.sided"
+)
+```
+
+### Does the use of code generation impact the academic performance in OOD?
+
+**Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
+
+**Alternate Hypothesis:** The use of code generation affect the academic performance in OOD.
+
+**Statistical Test: T-Test / Trying to compare means between two groups.**
+
+### Does AI effect how much time students spent on Object Oriented Design per week?
+
+**Null Hypothesis:** AI does not effect how much time students spend on Object Oriented Design per week.
+
+**Alternate Hypothesis:** AI does effect how much time students spend on Object Oriented Design per week.
+
+**Statistical Test: T-Test**
+
+***Reasoning:*** Conducting a T-Test for this question will produce the best result as comparing the mean number of hours of people who utilize AI in OOD versus those who do not. Will answer whether or not AI had an effect on overall time spent per week doing assignments for the course.
+
+```{r}
+noAiOnHoursSpent <- survey %>% filter(grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
+AiOnHoursSpent <- survey %>% filter(!grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
+
+newDF = data.frame("hours" = noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "Did not use")
+combinedDF = rbind(newDF, data.frame("hours" = AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "used"))
+
+t.test(combinedDF$hours ~ combinedDF$ai)
+
+ggttest(t.test(combinedDF$hours ~ combinedDF$ai))
+```
+
+***Analysis:***
+
+Since the p-value (0.5007) is greater than 0.05, we fail to reject the null hypothesis. This means that there isnt enough evidence to say that there is a significant effect on time spent per week in OOD if someone is utilizing AI verses someone who is not.
+
+Since the 95 percent confidence interval includes 0 it further supports this conclusion that there isnt a significant effect on time spent if using AI.
+
+In conclusion based on the data and the results of the t-test, we do not have sufficient evidence to conclude that there is a significant effect in time spent per week in Object Oriented Design if you are using AI.
+
+**Determining Outliers**
+
+```{r}
+
+boxplot(combinedDF$hours ~ combinedDF$ai, ylab = "Hours Spent on Course", xlab = "Did they use AI in the course?")
+```
+
+As seen in the above plots there are no visible outliers. So we do not need to do anything further.
+>>>>>>> c5813712a34728bdaca29988f27913369ff50be9
