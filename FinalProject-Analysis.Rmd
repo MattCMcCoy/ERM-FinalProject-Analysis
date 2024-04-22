@@ -18,13 +18,13 @@ survey <- read.csv("dataset/CleanedSurvey.csv", stringsAsFactors = TRUE)
 survey
 ```
 
-### Did the grade in OOD improve depending on the AI usage?
+### Did the grade in OOD change depending on the AI usage?
 
 **Null Hypothesis:** There is no difference in mean grades between students who used AI and those who did not.
 
 **Alternate Hypothesis:** There is a significant difference in mean grades between the students who used AI and those who did not.
 
-**Statistical Test: T-Test / Trying to compare means between two groups.**
+**Wilcoxon Rank-Sum Test**
 
 ```{r}
 # Create a categorical variable for AI usage
@@ -46,6 +46,10 @@ qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "AI Us
 qqnorm(survey$What.was.is.your.grade.from.OOD...0.100.[survey$AI_Usage == "Non-AI User"],
        main = "Non-AI User Grade Distribution")
 ```
+
+The normality assumption fails for AI user group since the p-value is less than significance level. Also, in QQ plot the datapoints do not follow a straight line. Hence, grades data is not normally distributed for AI-users.
+
+Let's calculate variances and check if any outliers are present.
 
 ```{r}
 # Calculate variances
@@ -76,9 +80,9 @@ upper_threshold_non_ai <- Q3_non_ai + 1.5 * IQR_non_ai
 
 
 # Identify outliers
-outliers_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_ai)]
+outliers_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "AI User" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_ai)]
 
-outliers_non_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "non_ai_user" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_non_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_non_ai)]
+outliers_non_ai <- survey$What.was.or.is.your.grade.from.OOD.[survey$AI_Usage == "Non-AI User" & (survey$What.was.or.is.your.grade.from.OOD. < lower_threshold_non_ai | survey$What.was.or.is.your.grade.from.OOD. > upper_threshold_non_ai)]
 
 
 # Print outliers
@@ -95,23 +99,20 @@ boxplot(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey,
 
 ***Test choice:***
 
-We use Welch t-test here as the underlying data looks normally distributed, as the p-values for both AI Users and Non-AI Users for Shapiro-Wilk test is above the level of significance. But the variances are not homogeneous. Also we have different number of samples in both groups.
+Given the violation of normality assumptions for the grades of AI users, a non-parametric test such as the Wilcoxon rank-sum test (Mann-Whitney U test) would be more appropriate. 
+Wilcoxon rank-sum test will be used for comparing the grades of AI users and Non-AI users, as it is robust to violations of normality assumptions and the presence of outliers.
 
 ```{r}
-# Perform t-test assuming equal variances
-t_test <- t.test(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey)
+# Perform wilcoxon rank-sum test
+wilcox_test_1 <- wilcox.test(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data = survey, alternative = "two.sided", exact=FALSE)
 
-# Print the results of the t-test
-print(t_test)
+# Print the results of the Wilcoxon rank-sum test
+print(wilcox_test_1)
 ```
 
 ***Analysis:***
 
-Since the p-value (0.1067) is greater than 0.05, we fail to reject the null hypothesis. This means that there is not enough evidence to prove that there is a significant difference in mean grades between the students who used AI and those who did not in OOD.
-
-The 95% confidence interval for the difference in means ranges from -15.762454 to 1.762454. This interval contains zero, further supporting the conclusion that there may not be a significant difference in mean grades between the two groups.
-
-Therefore, based on the results of the Welch Two Sample t-test, we do not find sufficient evidence to suggest that the usage of AI significantly impacts the grades of students in the OOD course.
+Since the p-value (0.7943) is greater than 0.05, we fail to reject the null hypothesis. This means that there is not enough evidence to prove that there is a significant difference in grades between the students who used AI and those who did not in OOD.
 
 ### Does the use of code generation impact the academic performance in OOD?
 
@@ -240,3 +241,103 @@ boxplot(combinedDF$hours ~ combinedDF$ai, ylab = "Hours Spent on Course", xlab =
 ```
 
 As seen in the above plots there are no visible outliers. So we do not need to do anything further.
+
+
+### Does the AI usage frequency affect the work hours per week?
+
+**Null Hypothesis:** AI usage frequency does not affect how much time AI-users spend on OOD per week.
+
+**Alternate Hypothesis:** AI usage frequency significantly affects how much time AI-users spend on OOD per week.
+
+**Statistical Test: One-way ANOVA.**
+  
+```{r}
+# Exclude non-AI users
+data <- survey[survey$AI_Usage == "AI User",]
+# Divide AI usage frequency into categories
+data$AI_usage_category <- ifelse(data$How.much.have.you.used...are.you.using.AI.in.OOD.if.at.all.. <= 6, "Low", "High")
+
+head(data)
+
+```
+
+```{r}
+# 1. Normality Assumption
+
+# Shapiro-Wilk Test
+shapiro_test_low <- shapiro.test(data[data$AI_usage_category == "Low", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`)
+shapiro_test_high <- shapiro.test(data[data$AI_usage_category == "High", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`)
+
+# Print the results
+print(shapiro_test_low)
+print(shapiro_test_high)
+
+# QQ plots for each AI usage category
+qqnorm(data[data$AI_usage_category == "Low", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`,
+       main = "Low AI-User Spent Time Distribution")
+qqline(data[data$AI_usage_category == "Low", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`)
+
+qqnorm(data[data$AI_usage_category == "High", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`,
+       main = "High AI-User Spent Time Distribution")
+qqline(data[data$AI_usage_category == "High", ]$`How.many.hours.did.you.spend.on.OOD.per.week.`)
+
+```
+
+Based on the Shapiro-Wilk normality tests and the non-straight QQ plots, the assumption of normality is violated for both the "Low" and "High" AI usage frequency categories.
+
+Let us check outliers.
+
+```{r}
+# Calculate IQR for Low AI users
+Q1_low_ai <- quantile(data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "Low"], 0.25)
+Q3_low_ai <- quantile(data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "Low"], 0.75)
+IQR_low_ai <- Q3_low_ai - Q1_low_ai
+
+# Calculate IQR for High AI users
+Q1_high_ai <- quantile(data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "High"], 0.25)
+Q3_high_ai <- quantile(data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "High"], 0.75)
+IQR_high_ai <- Q3_high_ai - Q1_high_ai
+
+
+# Define thresholds for outliers
+lower_threshold_low_ai <- Q1_low_ai - 1.5 * IQR_low_ai
+upper_threshold_low_ai <- Q3_low_ai + 1.5 * IQR_low_ai
+
+lower_threshold_high_ai <- Q1_high_ai - 1.5 * IQR_high_ai
+upper_threshold_high_ai <- Q3_high_ai + 1.5 * IQR_high_ai
+
+
+# Identify outliers
+outliers_low_ai <- data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "Low" & (data$How.many.hours.did.you.spend.on.OOD.per.week. < lower_threshold_low_ai | data$How.many.hours.did.you.spend.on.OOD.per.week. > upper_threshold_low_ai)]
+
+outliers_high_ai <- data$How.many.hours.did.you.spend.on.OOD.per.week.[data$AI_usage_category == "High" & (data$How.many.hours.did.you.spend.on.OOD.per.week. < lower_threshold_high_ai | data$How.many.hours.did.you.spend.on.OOD.per.week. > upper_threshold_high_ai)]
+
+
+# Print outliers
+print("Outliers for Low AI users:")
+print(outliers_low_ai)
+
+print("Outliers for High AI users:")
+print(outliers_high_ai)
+
+# Boxplot for identifying outliers
+boxplot(How.many.hours.did.you.spend.on.OOD.per.week. ~ AI_usage_category, data=data, 
+        xlab="AI Usage Category", ylab="Time Spent on OOD", main="Boxplot of Time Spent on OOD by AI Usage Category")
+```
+
+Though we see some outliers in Low AI-users category, we cannot remove them, as the frequency of same outliers is more, meaning the data could be legitimate. 
+
+
+***Test choice:***
+
+The choice of the Wilcoxon rank sum test is appropriate due to the violation of the normality assumption observed in the Shapiro-Wilk tests and the non-straight QQ plots. Also, there are few outliers which cannot be excluded, so Wilcoxon is the best choice as it is robust to normality and outliers both.
+
+```{r}
+# Perform Wilcoxon rank sum test
+wilcox_test_3.2 <- wilcox.test(How.many.hours.did.you.spend.on.OOD.per.week. ~ AI_usage_category, data = data, alternative = "two.sided", exact=FALSE)
+
+# Print the results of the Wilcoxon rank sum test
+print(wilcox_test_3.2)
+```
+Since the p-value (0.6221) is greater than 0.05, we fail to reject the null hypothesis. Therefore, there is not enough evidence to conclude that there is a significant difference in the work hours per week between the "Low" and "High" AI usage frequency categories.
+
