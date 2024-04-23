@@ -194,14 +194,6 @@ t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALS
 
 ```
 
-### Does the use of code generation impact the academic performance in OOD?
-
-**Null Hypothesis:** The use of code generation does not affect the academic performance in OOD.
-
-**Alternate Hypothesis:** The use of code generation affect the academic performance in OOD.
-
-**Statistical Test: T-Test / Trying to compare means between two groups.**
-
 ### Does AI effect how much time students spent on Object Oriented Design per week?
 
 **Null Hypothesis:** AI does not effect how much time students spend on Object Oriented Design per week.
