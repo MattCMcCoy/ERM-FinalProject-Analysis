@@ -99,8 +99,7 @@ boxplot(What.was.is.your.grade.from.OOD...0.100. ~ AI_Usage, data=survey,
 
 ***Test choice:***
 
-Given the violation of normality assumptions for the grades of AI users, a non-parametric test such as the Wilcoxon rank-sum test (Mann-Whitney U test) would be more appropriate. 
-Wilcoxon rank-sum test will be used for comparing the grades of AI users and Non-AI users, as it is robust to violations of normality assumptions and the presence of outliers.
+Given the violation of normality assumptions for the grades of AI users, a non-parametric test such as the Wilcoxon rank-sum test (Mann-Whitney U test) would be more appropriate. Wilcoxon rank-sum test will be used for comparing the grades of AI users and Non-AI users, as it is robust to violations of normality assumptions and the presence of outliers.
 
 ```{r}
 # Perform wilcoxon rank-sum test
@@ -209,9 +208,9 @@ t.test(subscription_model_grades, no_subscription_model_grades, var.equal = FALS
 
 **Alternate Hypothesis:** AI does effect how much time students spend on Object Oriented Design per week.
 
-**Statistical Test: T-Test**
+**Statistical Test: Wilcoxon**
 
-***Reasoning:*** Conducting a T-Test for this question will produce the best result as comparing the mean number of hours of people who utilize AI in OOD versus those who do not. Will answer whether or not AI had an effect on overall time spent per week doing assignments for the course.
+***Reasoning:*** Conducting a Wilcoxon rank-sum test for this question will produce the best result as comparing the mean number of hours of people who utilize AI in OOD versus those who do not and the data given is not normal as seen from the shapiro tests below. Will answer whether or not AI had an effect on overall time spent per week doing assignments for the course.
 
 ```{r}
 noAiOnHoursSpent <- survey %>% filter(grepl("Did not use", What.kind.of.AI.Model.did.you.use.))
@@ -220,28 +219,24 @@ AiOnHoursSpent <- survey %>% filter(!grepl("Did not use", What.kind.of.AI.Model.
 newDF = data.frame("hours" = noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "Did not use")
 combinedDF = rbind(newDF, data.frame("hours" = AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., "ai" = "used"))
 
-t.test(combinedDF$hours ~ combinedDF$ai)
 
-ggttest(t.test(combinedDF$hours ~ combinedDF$ai))
+boxplot(combinedDF$hours ~ combinedDF$ai, ylab = "Hours Spent on Course", xlab = "Did they use AI in the course?")
+
+shapiro.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+shapiro.test(AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week.)
+
+wilcox.test(noAiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., AiOnHoursSpent$How.many.hours.did.you.spend.on.OOD.per.week., alternative = "greater")
 ```
 
 ***Analysis:***
 
-Since the p-value (0.5007) is greater than 0.05, we fail to reject the null hypothesis. This means that there isnt enough evidence to say that there is a significant effect on time spent per week in OOD if someone is utilizing AI verses someone who is not.
+Since the p-value (0.2241) is greater than 0.05, we fail to reject the null hypothesis. This means that there isnt enough evidence to say that there is a significant effect on time spent per week in OOD if someone is utilizing AI verses someone who is not.
 
-Since the 95 percent confidence interval includes 0 it further supports this conclusion that there isnt a significant effect on time spent if using AI.
-
-In conclusion based on the data and the results of the t-test, we do not have sufficient evidence to conclude that there is a significant effect in time spent per week in Object Oriented Design if you are using AI.
+In conclusion based on the data and the results of the test, we do not have sufficient evidence to conclude that there is a significant effect in time spent per week in Object Oriented Design if you are using AI.
 
 **Determining Outliers**
 
-```{r}
-
-boxplot(combinedDF$hours ~ combinedDF$ai, ylab = "Hours Spent on Course", xlab = "Did they use AI in the course?")
-```
-
 As seen in the above plots there are no visible outliers. So we do not need to do anything further.
-
 
 ### Does the AI usage frequency affect the work hours per week?
 
@@ -250,7 +245,7 @@ As seen in the above plots there are no visible outliers. So we do not need to d
 **Alternate Hypothesis:** AI usage frequency significantly affects how much time AI-users spend on OOD per week.
 
 **Statistical Test: One-way ANOVA.**
-  
+
 ```{r}
 # Exclude non-AI users
 data <- survey[survey$AI_Usage == "AI User",]
@@ -325,8 +320,7 @@ boxplot(How.many.hours.did.you.spend.on.OOD.per.week. ~ AI_usage_category, data=
         xlab="AI Usage Category", ylab="Time Spent on OOD", main="Boxplot of Time Spent on OOD by AI Usage Category")
 ```
 
-Though we see some outliers in Low AI-users category, we cannot remove them, as the frequency of same outliers is more, meaning the data could be legitimate. 
-
+Though we see some outliers in Low AI-users category, we cannot remove them, as the frequency of same outliers is more, meaning the data could be legitimate.
 
 ***Test choice:***
 
@@ -339,5 +333,5 @@ wilcox_test_3.2 <- wilcox.test(How.many.hours.did.you.spend.on.OOD.per.week. ~ A
 # Print the results of the Wilcoxon rank sum test
 print(wilcox_test_3.2)
 ```
-Since the p-value (0.6221) is greater than 0.05, we fail to reject the null hypothesis. Therefore, there is not enough evidence to conclude that there is a significant difference in the work hours per week between the "Low" and "High" AI usage frequency categories.
 
+Since the p-value (0.6221) is greater than 0.05, we fail to reject the null hypothesis. Therefore, there is not enough evidence to conclude that there is a significant difference in the work hours per week between the "Low" and "High" AI usage frequency categories.
